@@ -160,6 +160,9 @@ func setupWorkloadContainerSpec(ctx context.Context, sbid, id string, spec *oci.
 
 	if spec.Windows != nil && specHasGPUDevice(spec) {
 		// we only support Nvidia gpus right now
+		ldConfigargs := []string{"-l", "/run/nvidia/lib"}
+		env := updateEnvWithNvidiaVariables()
+		addLDConfigHook(ctx, spec, ldConfigargs, env)
 		if err := addNvidiaDevicePreHook(ctx, spec); err != nil {
 			return err
 		}
@@ -169,6 +172,21 @@ func setupWorkloadContainerSpec(ctx context.Context, sbid, id string, spec *oci.
 	spec.Windows = nil
 
 	return nil
+}
+
+// Helper function to create an oci prestart hook to run ldconfig
+func addLDConfigHook(ctx context.Context, spec *oci.Spec, args, env []string) {
+	if spec.Hooks == nil {
+		spec.Hooks = &oci.Hooks{}
+	}
+
+	ldConfigHook := oci.Hook{
+		Path: "/sbin/ldconfig",
+		Args: args,
+		Env:  env,
+	}
+
+	spec.Hooks.Prestart = append(spec.Hooks.Prestart, ldConfigHook)
 }
 
 func addLinuxDeviceToSpec(ctx context.Context, hostDevice *configs.Device, spec *oci.Spec, addCgroupDevice bool) {
