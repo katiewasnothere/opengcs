@@ -9,6 +9,7 @@ import (
 var commands = map[string]func(){
 	"netnscfg":           netnsConfigMain,
 	"nvidiaPrestartHook": nvidiaPrestartHookMain,
+	"uevent":             ueventMain,
 }
 
 func main() {
